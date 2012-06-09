@@ -2,9 +2,71 @@ var yellowApiKey = 'exbpfptg75sv33yfyyjhtsb4'; // Sandbox key.  Not useful.
 var stops = [];
 var places = {};
 var map;
+var midiBridge;
 
 var busHue = 0.75;
 var businessHue = 0;
+
+var minNote = 60;
+var maxNote = 120;
+
+function getNote(pixel) {
+	var height = jQuery(window).height(),
+		range = maxNote - minNote,
+		pixelsPerNote = height / range,
+		note = pixel / pixelsPerNote;
+		
+	return maxNote - Math.floor(note);
+}
+
+function bloop() {
+	var bounds = map.getBounds();
+
+	var filtered = jQuery.map(map._layers, function(layer) {
+		if (layer._tiles) {
+			// ignore base layers.
+		} else {
+			if (bounds.contains(layer.getLatLng())) {
+				return layer;
+			} 
+		}
+	});
+
+	var orderPoints = function (a, b) {
+		return a.getLatLng().lng - b.getLatLng().lng;
+	}
+	
+	filtered = filtered.sort(orderPoints);
+
+	function blip(i) {
+		if (i < filtered.length) {
+			if (i > 0) {
+				filtered[i - 1].setStyle(filtered[i - 1].oldOptions);
+			}
+			var marker = filtered[i],
+				point = map.latLngToLayerPoint(marker.getLatLng());
+			
+			marker.oldOptions = marker.options;
+			marker.setStyle({
+				'color': '#666', 
+				'fillColor': '#666',
+				'fillOpacity' : 1
+			});
+			
+			playNote(getNote(point.y));
+			i++;
+			setTimeout(function () { blip(i); }, 100);
+		}
+	}
+	
+	setTimeout(function () {blip(0);}, 100);
+}
+
+function playNote(note, channel) {
+	if (!channel) channel = 1;
+	// status / channel / data1 / data2
+	midiBridge.sendMidiEvent(midiBridge.NOTE_ON,channel,note,100);
+}
 
 function markerHue(hue) {
 	return markerStyle(jQuery.Color([ hue, 0.8, 0.8], 'HSV').toHEX());
@@ -150,9 +212,13 @@ function init() {
 	map.on('moveend', showStops);
 	map.on('moveend', findBusinesses);
 	
+	midiBridge.init(function(midiEvent) {
+	}, {'javaDir': '/Bloop/java/'});
+	
 	getStops('data/stops.js', '#f00');
 	getStops('data/stl/stops.js', '#00f');
 	
+	jQuery('#bloop').click(bloop);
 	jQuery('#changeLocation').click(changeNeighbourhood);
 	jQuery('#changeBusinessType').click(findBusinesses);
 	jQuery('#businessType').change(changeBusinessTypeColour);
