@@ -10,9 +10,28 @@ body {
 }
 
 h1 {
+	color: white;
+}
+
+h2 {
+	padding: 0px;
+	margin: 0px;
+}
+
+fieldset {
+	border: none;
+	padding: 0px;
+}
+
+#sidebar {
 	position: absolute;
 	color: #f33;
 	z-index: 1000;
-	top: 50px;
-	left: 100px;
+	padding: 10px;
+	top: 100px;
+	left: 0px;
+	width: 250px;
+	background-color: #666;
+	opacity: 0.9;
+	color: white;
 }
