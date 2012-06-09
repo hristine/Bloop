@@ -1,6 +1,40 @@
 var yellowApiKey = 'exbpfptg75sv33yfyyjhtsb4'; // Sandbox key.  Not useful.
 var stops = null;
+var places = [];
 var map;
+
+function findBusinesses(e) {
+	// Avoid form submissions;  but ignore when it's from a leaflet event; which smells weird.
+	if (e && e.preventDefault) {
+		e.preventDefault();
+	}
+	
+	if (jQuery('#businessType').val()) {
+		var postdata = {
+			'url': 'http://api.sandbox.yellowapi.com/FindBusiness/',
+			'pg': '1',
+			'what': jQuery('#businessType').val(),
+			'where': 'cZ' + map.getCenter().lng + ',' + map.getCenter().lat,
+			'pgLen': '10',
+			'lang': 'en',
+			'fmt': 'json',
+			'apikey': yellowApiKey,
+			'UID': 'Bloop!'
+		}
+		jQuery.ajax({
+			'url': '/Bloop/proxy.php',
+			'data': postdata,
+			'success': function(data) {
+				jQuery.each(data.listings, function (i, listing) {
+					map.addLayer(new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 30, {
+'color': '#f00', 'fillColor': '#f00'}));
+				});
+			},
+			'type': 'post',
+			'dataType': 'json'
+		});
+	}	
+}
 
 function filterStops(bounds) {
 	return jQuery.map(stops, function (stop) {
@@ -15,7 +49,7 @@ function filterStops(bounds) {
 function showStops() {
 	var stops = filterStops(map.getBounds());
 	jQuery.each(stops, function (i, stop) {
-		map.addLayer(new L.CircleMarker(new L.LatLng(stop.stop_lat, stop.stop_lon)));
+		map.addLayer(new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, {'color': '#00f', 'fillColor': '#00f'}));
 	});
 }
 
@@ -53,10 +87,12 @@ function init() {
 	});
 	map.addLayer(layer);
 	map.on('moveend', showStops);
+	map.on('moveend', findBusinesses);
 	
 	getStops();
 	
 	jQuery('#changeLocation').click(changeNeighbourhood);
+	jQuery('#changeBusinessType').click(findBusinesses);
 }
 
 jQuery(document).ready(init);
