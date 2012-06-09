@@ -28,7 +28,7 @@ function bloop() {
 		} else {
 			if (bounds.contains(layer.getLatLng())) {
 				return layer;
-			} 
+			}
 		}
 	});
 
@@ -44,7 +44,7 @@ function bloop() {
 				filtered[i - 1].setStyle(filtered[i - 1].oldOptions);
 			}
 			var marker = filtered[i],
-				point = map.latLngToLayerPoint(marker.getLatLng());
+				point = map.latLngToContainerPoint(marker.getLatLng());
 			
 			marker.oldOptions = marker.options;
 			marker.setStyle({
