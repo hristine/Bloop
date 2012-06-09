@@ -3,11 +3,33 @@ var stops = null;
 var places = {};
 var map;
 
+var busHue = 0.75;
+var businessHue = 0;
+
+function markerStyle(hue) {
+	var colour = jQuery.Color([ hue, 0.8, 0.8], 'HSV').toHEX();	
+	return {
+		'color': colour,
+		'fillColor': colour,
+		'weight': 2
+	}
+}
+
+function changeBusinessTypeColour() {
+	businessHue += 0.1;	
+	if (businessHue >= 1) {
+		businessHue = 0;
+	}
+}
+
 function findBusinesses(e) {
 	// Avoid form submissions;  but ignore when it's from a leaflet event; which smells weird.
 	if (e && e.preventDefault) {
 		e.preventDefault();
 	}
+
+	var style = markerStyle(businessHue);
+	style.opacity = 0.85;
 	
 	if (jQuery('#businessType').val()) {
 		var postdata = {
@@ -15,7 +37,7 @@ function findBusinesses(e) {
 			'pg': '1',
 			'what': jQuery('#businessType').val(),
 			'where': 'cZ' + map.getCenter().lng + ',' + map.getCenter().lat,
-			'pgLen': '10',
+			'pgLen': '20',
 			'lang': 'en',
 			'fmt': 'json',
 			'apikey': yellowApiKey,
@@ -27,8 +49,11 @@ function findBusinesses(e) {
 			'success': function(data) {
 				jQuery.each(data.listings, function (i, listing) {
 					if (!places[listing.id]) {
-						map.addLayer(new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 30, {
-	'color': '#f00', 'fillColor': '#f00'}));
+						var marker = new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 45, style)
+						marker.on('click', function () {
+							alert(listing.name);
+						});
+						map.addLayer(marker);
 						places[listing.id] = true;
 					}
 				});
@@ -50,9 +75,15 @@ function filterStops(bounds) {
 }
 
 function showStops() {
-	var stops = filterStops(map.getBounds());
+	var style = markerStyle(busHue),
+		stops = filterStops(map.getBounds());
 	jQuery.each(stops, function (i, stop) {
-		map.addLayer(new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, {'color': '#00f', 'fillColor': '#00f'}));
+		var marker = new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, style);
+		marker.on('click', function () {
+			alert(stop.stop_name);
+		});
+		map.addLayer(marker);
+
 	});
 }
 
@@ -81,14 +112,32 @@ function getStops() {
 	});
 }
 
+L.BlankTileLayer = L.TileLayer.extend({
+    initialize: function(name) {
+        var url = '/Bloop/blank.png';
+        L.TileLayer.prototype.initialize.call(this, url, {});
+    }
+});
+
+
 function init() {
 	// replace "toner" here with "terrain" or "watercolor"
-	var layer = new L.StamenTileLayer("toner");
+	var layer = new L.StamenTileLayer("watercolor");
+	var toner = new L.StamenTileLayer("toner");
+	var blank = new L.BlankTileLayer();
+	
 	map = new L.Map("map", {
 	    center: new L.LatLng(45.5081, -73.5550),
 	    zoom: 15
 	});
+
 	map.addLayer(layer);
+	map.addLayer(toner);
+	
+	var layersControl = new L.Control.Layers({'Painted': layer, 'Minimalistic': toner, 'Just Points': blank});
+
+	map.addControl(layersControl);
+		
 	map.on('moveend', showStops);
 	map.on('moveend', findBusinesses);
 	
@@ -96,6 +145,7 @@ function init() {
 	
 	jQuery('#changeLocation').click(changeNeighbourhood);
 	jQuery('#changeBusinessType').click(findBusinesses);
+	jQuery('#businessType').change(changeBusinessTypeColour);
 }
 
 jQuery(document).ready(init);
