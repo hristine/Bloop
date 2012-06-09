@@ -112,12 +112,12 @@ function changeNeighbourhood(e) {
 
 function getStops(dataUrl, colour) {
 	jQuery.get(dataUrl, function (json) {
-		jQuery.each(json, function (i, stop) {
-			stop.colour = colour;
-			stops.push(stop);
+		jQuery.each(json, function (i, busStop) {
+			busStop.colour = colour;
+			stops.push(busStop);
 		});
 		showStops();
-	});
+	}, 'json');
 }
 
 // Custom tile layer that just shows white as a background.
@@ -150,8 +150,8 @@ function init() {
 	map.on('moveend', showStops);
 	map.on('moveend', findBusinesses);
 	
-	getStops('data/stops.json', '#f00');
-	getStops('data/stl/stops.json', '#00f');
+	getStops('data/stops.js', '#f00');
+	getStops('data/stl/stops.js', '#00f');
 	
 	jQuery('#changeLocation').click(changeNeighbourhood);
 	jQuery('#changeBusinessType').click(findBusinesses);
