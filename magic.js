@@ -1,13 +1,16 @@
 var yellowApiKey = 'exbpfptg75sv33yfyyjhtsb4'; // Sandbox key.  Not useful.
-var stops = null;
+var stops = [];
 var places = {};
 var map;
 
 var busHue = 0.75;
 var businessHue = 0;
 
-function markerStyle(hue) {
-	var colour = jQuery.Color([ hue, 0.8, 0.8], 'HSV').toHEX();	
+function markerHue(hue) {
+	return markerStyle(jQuery.Color([ hue, 0.8, 0.8], 'HSV').toHEX());
+}
+
+function markerStyle(colour) {
 	return {
 		'color': colour,
 		'fillColor': colour,
@@ -28,7 +31,7 @@ function findBusinesses(e) {
 		e.preventDefault();
 	}
 
-	var style = markerStyle(businessHue);
+	var style = markerHue(businessHue);
 	style.opacity = 0.85;
 	
 	if (jQuery('#businessType').val()) {
@@ -78,7 +81,9 @@ function showStops() {
 	var style = markerStyle(busHue),
 		stops = filterStops(map.getBounds());
 	jQuery.each(stops, function (i, stop) {
-		var marker = new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, style);
+		var style = markerStyle(stop.colour),
+			marker = new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, style);
+			
 		marker.on('click', function () {
 			alert(stop.stop_name);
 		});
@@ -105,13 +110,17 @@ function changeNeighbourhood(e) {
 		}, 'jsonp');
 }
 
-function getStops() {
-	jQuery.get('data/stops.json', function (json) {
-		stops = json;
+function getStops(dataUrl, colour) {
+	jQuery.get(dataUrl, function (json) {
+		jQuery.each(json, function (i, stop) {
+			stop.colour = colour;
+			stops.push(stop);
+		});
 		showStops();
 	});
 }
 
+// Custom tile layer that just shows white as a background.
 L.BlankTileLayer = L.TileLayer.extend({
     initialize: function(name) {
         var url = '/Bloop/blank.png';
@@ -141,7 +150,8 @@ function init() {
 	map.on('moveend', showStops);
 	map.on('moveend', findBusinesses);
 	
-	getStops();
+	getStops('data/stops.json', '#f00');
+	getStops('data/stl/stops.json', '#00f');
 	
 	jQuery('#changeLocation').click(changeNeighbourhood);
 	jQuery('#changeBusinessType').click(findBusinesses);
