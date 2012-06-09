@@ -1,6 +1,6 @@
 var yellowApiKey = 'exbpfptg75sv33yfyyjhtsb4'; // Sandbox key.  Not useful.
 var stops = null;
-var places = [];
+var places = {};
 var map;
 
 function findBusinesses(e) {
@@ -26,8 +26,11 @@ function findBusinesses(e) {
 			'data': postdata,
 			'success': function(data) {
 				jQuery.each(data.listings, function (i, listing) {
-					map.addLayer(new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 30, {
-'color': '#f00', 'fillColor': '#f00'}));
+					if (!places[listing.id]) {
+						map.addLayer(new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 30, {
+	'color': '#f00', 'fillColor': '#f00'}));
+						places[listing.id] = true;
+					}
 				});
 			},
 			'type': 'post',
