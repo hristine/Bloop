@@ -19,6 +19,22 @@ function getNote(pixel) {
 	return maxNote - Math.floor(note);
 }
 
+var baselineSpeed = 100;
+
+evenDelay = function (i) {
+	return baselineSpeed;
+}
+
+interestingDelay = function (i) {
+	return i % 8 == 0 ? baselineSpeed * 4 : baselineSpeed;
+}
+
+randomDelay = function (i) {
+	return Math.floor(Math.random() * baselineSpeed);
+}
+
+var delay = evenDelay;
+
 function bloop() {
 	var bounds = map.getBounds();
 
@@ -46,16 +62,18 @@ function bloop() {
 			var marker = filtered[i],
 				point = map.latLngToContainerPoint(marker.getLatLng());
 			
-			marker.oldOptions = marker.options;
-			marker.setStyle({
-				'color': '#666', 
-				'fillColor': '#666',
-				'fillOpacity' : 1
-			});
-			
-			playNote(getNote(point.y));
+			// If the marker is still in the map bounds; do some stuff.
+			if (map.getBounds().contains(marker.getLatLng())) {			
+				marker.oldOptions = marker.options;
+				marker.setStyle({
+					'fillOpacity' : 1
+				});
+	
+				playNote(getNote(point.y), marker.channel);							
+			}
+
 			i++;
-			setTimeout(function () { blip(i); }, 100);
+			setTimeout(function () { blip(i); }, delay(i));
 		}
 	}
 	
@@ -81,15 +99,18 @@ function markerStyle(colour) {
 }
 
 function changeBusinessTypeColour() {
-	businessHue += 0.1;	
+	businessHue += 0.05;	
 	if (businessHue >= 1) {
 		businessHue = 0;
 	}
 }
 
 function findBusinesses(e) {
+	var limit = 10;
 	// Avoid form submissions;  but ignore when it's from a leaflet event; which smells weird.
 	if (e && e.preventDefault) {
+		// If it's from a form submission; get a bunch of things.
+		limit = 100;
 		e.preventDefault();
 	}
 
@@ -115,6 +136,7 @@ function findBusinesses(e) {
 				jQuery.each(data.listings, function (i, listing) {
 					if (!places[listing.id]) {
 						var marker = new L.Circle(new L.LatLng(listing.geoCode.latitude, listing.geoCode.longitude), 45, style)
+						marker.channel = 1;
 						marker.on('click', function () {
 							alert(listing.name);
 						});
@@ -146,6 +168,7 @@ function showStops() {
 		var style = markerStyle(stop.colour),
 			marker = new L.Circle(new L.LatLng(stop.stop_lat, stop.stop_lon), 30, style);
 			
+		marker.channel = 1;
 		marker.on('click', function () {
 			alert(stop.stop_name);
 		});
@@ -222,6 +245,12 @@ function init() {
 	jQuery('#changeLocation').click(changeNeighbourhood);
 	jQuery('#changeBusinessType').click(findBusinesses);
 	jQuery('#businessType').change(changeBusinessTypeColour);
+
+	jQuery('#default').click(function () {delay = evenDelay; });
+	jQuery('#interesting').click(function () {delay = interestingDelay; });
+	jQuery('#chaos').click(function () {delay = randomDelay; });
+	jQuery('#fast').click(function () { baselineSpeed /= 2; });
+	jQuery('#slow').click(function () { baselineSpeed *= 2; });
 }
 
 jQuery(document).ready(init);
