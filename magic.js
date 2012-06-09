@@ -2,9 +2,26 @@ var yellowApiKey = 'exbpfptg75sv33yfyyjhtsb4'; // Sandbox key.  Not useful.
 var stops = null;
 var map;
 
+function filterStops(bounds) {
+	return jQuery.map(stops, function (stop) {
+		if (!stop.marker && bounds.contains(new L.LatLng(stop.stop_lat, stop.stop_lon))) {
+			stop.marker = true;
+			return stop;
+		}
+		return null;
+	});
+}
+
+function showStops() {
+	var stops = filterStops(map.getBounds());
+	jQuery.each(stops, function (i, stop) {
+		map.addLayer(new L.CircleMarker(new L.LatLng(stop.stop_lat, stop.stop_lon)));
+	});
+}
+
 function changeNeighbourhood(e) {
 	e.preventDefault();
-	
+
 	jQuery.get('http://nominatim.openstreetmap.org/search?json_callback=?', 
 		{
 			'q': jQuery('#location').val() + ', Montreal',
@@ -23,6 +40,7 @@ function changeNeighbourhood(e) {
 function getStops() {
 	jQuery.get('data/stops.json', function (json) {
 		stops = json;
+		showStops();
 	});
 }
 
@@ -34,6 +52,7 @@ function init() {
 	    zoom: 15
 	});
 	map.addLayer(layer);
+	map.on('moveend', showStops);
 	
 	getStops();
 	
