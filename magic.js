@@ -7,8 +7,8 @@ var midiBridge;
 var busHue = 0.75;
 var businessHue = 0;
 
-var minNote = 60;
-var maxNote = 120;
+var minNote = 70;
+var maxNote = 100;
 
 function getNote(pixel) {
 	var height = jQuery(window).height(),
